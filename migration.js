@@ -2,9 +2,9 @@ const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database('./database.sqlite');
 
 db.serialize(() => {
-	db.run(`DROP TABLE IF EXISTS Employees`);
+	db.run(`DROP TABLE IF EXISTS Employee`);
 
-	db.run(`CREATE TABLE IF NOT EXISTS Employees(
+	db.run(`CREATE TABLE IF NOT EXISTS Employee(
 		id INTEGER NOT NULL,
 		name TEXT NOT NULL,
 		position TEXT NOT NULL,
