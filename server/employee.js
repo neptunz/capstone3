@@ -13,10 +13,6 @@ Creates a new employee with the information from the employee property of the re
 If any required fields are missing, returns a 400 response
 */
 
-// Merge timesheet
-const timesheetsRouter = require('./timesheets.js');
-employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
-
 employeesRouter.param('employeeId', (req, res, next, employeeId) => {
 	const sql = 'SELECT * FROM Employee WHERE Employee.id = $employeeId';
 	const values = {$employeeId: employeeId};
@@ -31,6 +27,10 @@ employeesRouter.param('employeeId', (req, res, next, employeeId) => {
 		}
 	});
 });
+
+// Merge timesheet
+const timesheetsRouter = require('./timesheet.js');
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
 
 //GET /api/employees
 employeesRouter.get('/', (req, res, next) => {
