@@ -1,5 +1,5 @@
 //employee.js
-const employeeRouter = require('express').Router();
+const employeesRouter = require('express').Router();
 
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
@@ -13,7 +13,11 @@ Creates a new employee with the information from the employee property of the re
 If any required fields are missing, returns a 400 response
 */
 
-employeeRouter.param('employeeId', (req, res, next, employeeId) => {
+// Merge timesheet
+const timesheetsRouter = require('./timesheets.js');
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
+
+employeesRouter.param('employeeId', (req, res, next, employeeId) => {
 	const sql = 'SELECT * FROM Employee WHERE Employee.id = $employeeId';
 	const values = {$employeeId: employeeId};
 	db.get(sql, values, (error, employee) => {
@@ -29,7 +33,7 @@ employeeRouter.param('employeeId', (req, res, next, employeeId) => {
 });
 
 //GET /api/employees
-employeeRouter.get('/', (req, res, next) => {
+employeesRouter.get('/', (req, res, next) => {
 	db.all('SELECT * FROM Employee WHERE is_current_employee = 1',
 		(err, employees) => {
 			if (err) {
@@ -43,7 +47,7 @@ employeeRouter.get('/', (req, res, next) => {
 
 
 //GET /api/employees/:employeeId
-employeeRouter.get('/:employeeId', (req, res, next) => {
+employeesRouter.get('/:employeeId', (req, res, next) => {
  	res.status(200).json({employee: req.employee});
 });
 
@@ -52,7 +56,7 @@ const employeeValidator = (req, res, next) => {
 	const name = req.body.employee.name,
 		position = req.body.employee.position,
 		wage = req.body.employee.wage,
-		isCurrentEmployee = req.body.employee.isCurrentEmployee === 0 ? 0 : 1;
+		is_current_employee = req.body.employee.is_current_employee === 0 ? 0 : 1;
 	if (!name || !position || !wage) {
 		return res.sendStatus(400);
 	}
@@ -60,13 +64,13 @@ const employeeValidator = (req, res, next) => {
 };
 
 //POST /api/employees
-employeeRouter.post('/', employeeValidator, (req, res, next) => {
-	const sql = 'INSERT INTO Employee (name, position, wage, is_current_employee) VALUES ($name, $position, $wage, $isCurrentEmployee)';
+employeesRouter.post('/', employeeValidator, (req, res, next) => {
+	const sql = 'INSERT INTO Employee (name, position, wage, is_current_employee) VALUES ($name, $position, $wage, $is_current_employee)';
 	const values = {
-		$name: name,
-		$position: position,
-		$wage: wage,
-		$isCurrentEmployee: isCurrentEmployee
+		$name: req.body.employee.name,
+		$position: req.body.employee.position,
+		$wage: req.body.employee.wage,
+		$is_current_employee: req.body.employee.is_current_employee === 0 ? 0 : 1
 	};
 
 	db.run(sql, values, function(error) {
@@ -87,13 +91,14 @@ Updates the employee with the specified employee ID using the information from t
 If any required fields are missing, returns a 400 response
 If an employee with the supplied employee ID doesn't exist, returns a 404 response
 */
-employeeRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
-	const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_current_employee = $isCurrentEmployee WHERE Employee.id = $employeeId';
+employeesRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
+	const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_current_employee = $is_current_employee WHERE Employee.id = $employeeId';
 	const values = {
-		$name: name,
-		$position: position,
-		$wage: wage,
-		$isCurrentEmployee: isCurrentEmployee
+		$name: req.body.employee.name,
+		$position: req.body.employee.position,
+		$wage: req.body.employee.wage,
+		$is_current_employee: req.body.employee.is_current_employee === 0 ? 0 : 1,
+		$employeeId: req.params.employeeId
 	};
 
 	db.run(sql, values, (error) => {
@@ -109,8 +114,8 @@ employeeRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
 });
 
 //DELETE
-employeeRouter.delete('/:employeeId', (req, res, next) => {
-	const sql = 'UPDATE Employee SET is_currently_employed = 0 WHERE Employee.id = $employeeId';
+employeesRouter.delete('/:employeeId', (req, res, next) => {
+	const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE Employee.id = $employeeId';
 	const values = {$employeeId: req.params.employeeId};
 
 	db.run(sql, values, (error) => {
@@ -127,4 +132,4 @@ employeeRouter.delete('/:employeeId', (req, res, next) => {
 
 
 
-module.exports = employeeRouter;
+module.exports = employeesRouter;
