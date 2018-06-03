@@ -1,17 +1,13 @@
 //employee.js
 const employeesRouter = require('express').Router();
+//const timesheetsRouter = require('express').Router();
 
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
 
-//const pp = obj => JSON.stringify(obj, null, 2);
-/*
-GET
-Returns a 200 response containing all saved currently-employed employees (is_current_employee is equal to 1) on the employees property of the response body
-POST
-Creates a new employee with the information from the employee property of the request body and saves it to the database. Returns a 201 response with the newly-created employee on the employee property of the response body
-If any required fields are missing, returns a 400 response
-*/
+// Merge timesheet
+const timesheetsRouter = require('./timesheet.js');
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
 
 employeesRouter.param('employeeId', (req, res, next, employeeId) => {
 	const sql = 'SELECT * FROM Employee WHERE Employee.id = $employeeId';
@@ -28,10 +24,6 @@ employeesRouter.param('employeeId', (req, res, next, employeeId) => {
 	});
 });
 
-// Merge timesheet
-const timesheetsRouter = require('./timesheet.js');
-employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
-
 //GET /api/employees
 employeesRouter.get('/', (req, res, next) => {
 	db.all('SELECT * FROM Employee WHERE is_current_employee = 1',
@@ -42,7 +34,6 @@ employeesRouter.get('/', (req, res, next) => {
 			res.status(200).json({employees});
 		}
 	});
-	//console.log(`>>> comment: ${pp(request.body.comment)}`);
 });
 
 
@@ -86,11 +77,6 @@ employeesRouter.post('/', employeeValidator, (req, res, next) => {
 });
 
 //PUT /api/employees/:employeeId
-/*
-Updates the employee with the specified employee ID using the information from the employee property of the request body and saves it to the database. Returns a 200 response with the updated employee on the employee property of the response body
-If any required fields are missing, returns a 400 response
-If an employee with the supplied employee ID doesn't exist, returns a 404 response
-*/
 employeesRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
 	const sql = 'UPDATE Employee SET name = $name, position = $position, wage = $wage, is_current_employee = $is_current_employee WHERE Employee.id = $employeeId';
 	const values = {
@@ -113,7 +99,7 @@ employeesRouter.put('/:employeeId', employeeValidator, (req, res, next) => {
 	});
 });
 
-//DELETE
+//DELETE /api/employees/:employeeId
 employeesRouter.delete('/:employeeId', (req, res, next) => {
 	const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE Employee.id = $employeeId';
 	const values = {$employeeId: req.params.employeeId};
