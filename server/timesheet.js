@@ -51,9 +51,9 @@ timesheetsRouter.post('/', (req, res, next) => {
 
 			const sql = 'INSERT INTO Timesheet (hours, rate, date, employee_id) VALUES ($hours, $rate, $date, $employeeId)';
 			const values = {
-				$hours: req.body.timesheet.hours,
-				$rate: req.body.timesheet.rate,
-				$date: req.body.timesheet.date,
+				$hours: hours,
+				$rate: rate,
+				$date: date,
 				$employeeId: req.params.employeeId};
 
 				db.run(sql, values, function(error) {
